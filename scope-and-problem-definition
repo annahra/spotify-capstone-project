@@ -1,0 +1,82 @@
+/-------------------------------------------------------------------------
+/ Capstone Project: Scope and Problem Definition
+/
+/ Development by Annah Ramones
+/
+/ Date: 6/1/2020
+/-------------------------------------------------------------------------
+
+---------------------------------------------------------[ OVERVIEW ]-----
+
+This project will explore the different ways that pieces of music can
+be compared with each other. The first part will do so in the context
+of a recommendation system based on which artists is already in a user's
+network. The second part, the goal will be to identify sub-communities
+of artists based on musical similarities.
+
+---------------------------------------------------------[ DATA ]---------
+
+This data was pulled using Spotify's Web API and organized by/downloaded
+from a user on Kaggle.
+
+---------------------------------------------------------[ QUESTIONS ]---- 
+
+Easier: For a given user with certain songs/artists in their network, 
+recommend them songs/artists based on their network.
+
+Harder: Find subcommunities of artists/songs that share musical
+similarities.
+
+----------------------------------------[ ALGORITHMS & DATA STRUCTURES ]-- 
+
+Main Data Structure: I will be using an undirected graph implemented with
+an adjacency list. I could model each song as a node, or
+each artist as a node.
+
+Creating vertices between the nodes is slightly more complicated, and 
+I am open to feedback in this area. 
+
+There are 9 features of the data that I could use: acousticness, 
+danceability, energy, instrumentalness, valence, tempo, liveness, 
+loudness, and speechiness. Each feature has a certain value associated 
+with it between 0 and 1 (except for loudness which is -60 to 0, which I 
+might drop anyway). I was thinking to divide each feature into 10 or
+more groups, and evaluate the songs using only one feature at a time.
+Each song/artist in the same group will have an edge between them.
+
+However, I'm more interested in evaluating the song as a whole entity,
+using all of the features. I thought that maybe I could add all of the
+features up and then divide the songs into different groups, but that
+probably wouldn't work because each feature would be lost in the simple
+addition. I then thought to multiply the features I care about by 
+an integer so that they would have more weight in the addition. 
+
+I may experiment with this to see if the results yielded actually 
+make sense. 
+
+Easier question: I will create a user node, which will be me, 
+and connect it to my favorite artists. Using Breadth First Search,
+I will then find new artists that are related to my favorites. 
+I will also listen to them to see if the edges I drew between the 
+artists actually make sense.
+
+Harder Question: There seem to be many different ways to find 
+subcommunities within a graph. I will take the approach that Mia
+laid out, which was to compute the betweenness of all edges 
+(using the concept of flow) and remove edges with the highest
+betweenness, then repeat until I have separated the graph into
+20 different components. This number is based on the number of
+genres out there. 
+
+-------------------------------[ ALGORITHM ANALYSIS, LIMITATIONS, RISK ]--
+
+Easier Question: Suppose a user has N number of nodes in their network,
+using BFS, we would evaluate N number of nodes. Now suppose that each
+artist/song node is connected to V number of other nodes. To evaluate
+and recommend a song to the user, the time complexity, using BFS would be
+O(NV).
+
+Harder Question: This implementation will actually be a lot trickier,
+since I'm not actually sure how to compute the betweenness of all of the
+edges. Considering there will be a lot of edges in my graph, I need to
+be careful to take note of the time complexity every step of the way.
