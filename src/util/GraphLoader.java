@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -73,12 +74,19 @@ public class GraphLoader{
 		HashMap<String,LinkedList<Node>> submap = new HashMap<>();
 		HashMap<String, LinkedList<Node>> objmap = new HashMap<>();
 		
+		int maincount = 0;
 		for(Node n : graph.getEachNode()) {
 			String key = (String)n.getAttribute("subjective_classes");
 			if(submap.containsKey(key)){
 				LinkedList<Node> nodes = submap.get(key);
 				for(int idx=0; idx<nodes.size();idx++) {
-					graph.addEdge( "sub "+(String)n.getAttribute("name")+" "+nodes.get(idx).getAttribute("name"), n, nodes.get(idx));
+					if(!nodes.get(idx).getAttribute("name").equals(n.getAttribute("name")) && !n.hasEdgeBetween(nodes.get(idx))) {
+						Edge e = graph.addEdge( (String)n.getAttribute("name")+" "+nodes.get(idx).getAttribute("name"), n, nodes.get(idx));
+						e.addAttribute("weight", 1);
+						if(!submap.get(key).contains(n)) {
+							submap.get(key).add(n);
+						}
+					}
 				}
 			} else {
 				LinkedList<Node> ll = new LinkedList<Node>();
@@ -86,13 +94,23 @@ public class GraphLoader{
 				submap.put(key, ll);
 			}
 			
+			
 			String objkey = (String)n.getAttribute("objective_classes");
 			if(objmap.containsKey(objkey)) {
 				LinkedList<Node> nodes = objmap.get(objkey);
 				for(int idx=0;idx<nodes.size();idx++) {
 					try {
-						graph.addEdge("obj "+(String)n.getAttribute("name")+" "+nodes.get(idx).getAttribute("name"), n, nodes.get(idx));
+						if(n.hasEdgeBetween(nodes.get(idx))) {
+							Edge ed = n.getEdgeBetween(nodes.get(idx));
+							ed.addAttribute("weight", (Integer)ed.getAttribute("weight")+1);
+							ed.addAttribute("ui.class", "priority");
+						}
+						else {
+							Edge e = graph.addEdge((String)n.getAttribute("name")+" "+nodes.get(idx).getAttribute("name"), n, nodes.get(idx));
+							e.addAttribute("weight", 1);
+						}
 					} catch(EdgeRejectedException e) {
+						System.out.println("Theres still an edge being rejected");
 						continue;
 					}
 				}
@@ -101,7 +119,43 @@ public class GraphLoader{
 				ll.add(n);
 				objmap.put(objkey, ll);
 			}
+			
+			System.out.println("sub map size "+submap.size());
+			System.out.println("obj map size "+objmap.size());
+			
+			System.out.println("iteration: "+maincount);
+			maincount+=1;
 		}
+		
+		int max = 0;
+		int min = 1000000;
+		String minatt = "";
+		String attr = "";
+		for(String sub : submap.keySet()) {
+			int currCount = submap.get(sub).size();
+			if(max == 0) {
+				max = currCount;
+				min = currCount;
+				attr = sub;
+				minatt = sub;
+			}
+			else {
+				if(currCount > max) {
+					max = currCount;
+					attr = sub;
+				}
+				else {
+					if(currCount < min) {
+						min = currCount;
+						minatt = sub;
+					}
+				}
+			}
+		}
+		System.out.println("Hashmap size: "+submap.size());
+		System.out.println("Max: "+attr+"= "+max);
+		System.out.println("Min: "+minatt+"= "+min);
+		System.out.println("Nodes in graph: "+ graph.getNodeCount());
 	}
 
 	
@@ -114,6 +168,8 @@ public class GraphLoader{
 	 * @param input An array of strings corresponding to a line in the file
 	 */
 	private static void addAttributes(Node n, String[] input) {
+		n.addAttribute("preweight", 0);
+		
 		n.addAttribute("acousticness",input[1]);
 		if(Float.parseFloat(input[1]) < 0.60) {
 			n.addAttribute("acous_class", "A-");
