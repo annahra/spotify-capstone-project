@@ -1,6 +1,8 @@
 package artistsgraph;
 
 import util.GraphLoader;
+import util.GraphLoaderArtists;
+
 import org.graphstream.graph.*;
 import org.graphstream.graph.implementations.*;
 
@@ -14,22 +16,38 @@ public class ArtistGraph{
 	private static List<Node> userArt = new LinkedList<>();
 	private static Graph g;
 	
-	public static List<Node> bfs(){
+	public static List<Node> bfs(Node user){
 		List<Node> sugg = new LinkedList<>();
 		
-		for(Node node : userArt) {
-			List<Node> neigh = new LinkedList<>();
-			Iterator<Node> it = node.getNeighborNodeIterator();
-			while(it.hasNext()) {
-				Edge e = node.getEdgeBetween(it.next());
-				if(e.hasAttribute("ui.class")) {
-//					System.out.println("--------------------");
-//					System.out.println((String)node.getAttribute("name"));
-//					System.out.println((String)it.next().getAttribute("name"));
-//					System.out.println("--------------------");
-					it.next().addAttribute("ui.class", "sugg");
-				}
+		Iterator bfsIt = user.getBreadthFirstIterator();
+		while(bfsIt.hasNext()) {
+			Node currNode = (Node) bfsIt.next();
+			if(!userArt.contains(currNode) && !currNode.equals(user)) {
+				sugg.add(currNode);
+				currNode.addAttribute("ui.class", "sugg");
 			}
+			if(sugg.size()==20) {break;}
+		}
+		
+//		for(Node node : userArt) {
+//			Iterator<Node> it = node.getNeighborNodeIterator();
+//			while(it.hasNext()) {
+//				Edge e = node.getEdgeBetween(it.next());
+//				Node n = it.next();
+//				System.out.println(n);
+//				
+////				if(e.hasAttribute("ui.class")) {
+////					System.out.println("--------------------");
+////					System.out.println((String)node.getAttribute("name"));
+////					System.out.println((String)it.next().getAttribute("name"));
+////					System.out.println("--------------------");
+////					it.next().addAttribute("ui.class", "sugg");
+////				}
+//			}
+//		}
+		
+		for(Node n : sugg) {
+			System.out.println((String)n.getAttribute("name"));
 		}
 		
 		return sugg;
@@ -70,14 +88,16 @@ public class ArtistGraph{
 		//String file = "data/artists-1600.txt";
 		
 		System.out.println("Loading graph....");
-		GraphLoader.loadGraph(file, g);
+		//GraphLoader.loadGraph(file, g);
+		GraphLoaderArtists.loadGraph(file, g);
 		System.out.println("DONE");
 		
-		Node n = g.addNode("user");
-		getArtists(n, artists,g);
-		
-		g.display();
-		bfs();
+		Node user = g.addNode("user");
+		getArtists(user, artists,g);
+		//System.out.println("Displaying graph.....");
+		//g.display();
+		System.out.println("Performing bfs.....");
+		bfs(user);
 	}
 	
 	private static String styleSheet = ""
